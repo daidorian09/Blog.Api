@@ -8,6 +8,9 @@ const UserTokenSchema: mongoose.Schema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'users'
     },
+    tokenType : {
+        type : Number
+    },
     isActive: {
         type: Boolean,
         default: true

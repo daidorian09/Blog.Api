@@ -6,11 +6,22 @@ const PostSchema: mongoose.Schema = new mongoose.Schema({
         required: true,
     },
     text: {
-        type: String
+        type: String,
+        required : true
+    },
+    author: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'users'
+    },
+    isPrivate: {
+        type: Boolean
+    },
+    tags: {
+        type : Array
     },
     isActive: {
         type: Boolean,
-        default: false
+        default: true
     },
     createdAt: {
         type: Date,

@@ -1,37 +1,35 @@
-import mongoose, {
-    model
-} from 'mongoose'
-import {
-    IRepository
-} from './interfaces/IRepository';
-
-
-export abstract class BaseRepository <T extends mongoose.Document> implements IRepository <T> {
+import mongoose from 'mongoose'
+import { IGenericRepository } from './interfaces/genericRepository.interface'
+export class GenericRepository <T extends mongoose.Document> implements IGenericRepository <T> {
 
     private _model: mongoose.Model <mongoose.Document>
 
-    constructor(schema: mongoose.Model < mongoose.Document> ) {
+        constructor(schema: mongoose.Model < mongoose.Document > ) {
             this._model = schema
-    }
+        }
 
-    async find(entity: T): Promise < T[] > {
+    async findAll(entity: T): Promise <T[]> {
         return await this._model.find({}).lean().exec()
     }
 
-    async findOne(id: string): Promise < T > {
+    async findById(id: string): Promise <T> {
         return await this._model.findOne({
             _id: id
         }).lean().exec()
     }
 
-    async create(entity: T): Promise < T > {
+    async findOne(predicate? : Object): Promise<T> {
+        return await this._model.findOne(predicate).lean().exec()
+    }
+
+    async create(entity: T): Promise <T> {
         return await this._model.create(entity).then(newEntity => {
             return newEntity
         }).catch(err => {
             return err
         })
     }
-    async update(id: string, entity: T): Promise < T > {
+    async update(id: string, entity: T): Promise <T> {
         return await this._model.findByIdAndUpdate({
             _id: id
         }, entity).lean().exec()

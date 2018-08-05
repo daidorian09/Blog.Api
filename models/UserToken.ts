@@ -1,4 +1,24 @@
-import * as mongoose from 'mongoose'
+import mongoose from 'mongoose'
+export enum TokenType {
+    ConfirmAccount,
+    SignIn
+}
+
+export interface IUserToken extends mongoose.Document {
+    token : string
+
+    applicationUser : string
+
+    tokenType : TokenType
+
+    isActive : boolean
+
+    createdAt: Date
+
+    modifiedAt: Date | null
+
+    expiredAt: Date | null | number
+}
 
 const UserTokenSchema: mongoose.Schema = new mongoose.Schema({
     token: {
@@ -29,5 +49,7 @@ const UserTokenSchema: mongoose.Schema = new mongoose.Schema({
     }
 })
 
-const UserToken = mongoose.model('userTokens', UserTokenSchema)
+const UserToken = mongoose.model<IUserToken>('userTokens', UserTokenSchema)
+
+Object.seal(UserToken)
 export default UserToken

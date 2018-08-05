@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+      "outDir": "./dist/",
+      "sourceRoot": ".",
+      "baseUrl": ".",
+      "module": "commonjs",
+      "target": "es2018",
+      "sourceMap": true,
+      "moduleResolution": "node",
+      "forceConsistentCasingInFileNames": true,
+      "noImplicitReturns": true,
+      "noImplicitThis": true,
+      "noImplicitAny": true,
+      "strict": true,
+      "pretty": true,
+      "experimentalDecorators": true,
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true,
+      "types": ["node"],
+      "typeRoots" : ["node_modules/@types"]
+    },
+    "include": ["./**/*"],
+    "exclude": ["node_modules"]
+  }

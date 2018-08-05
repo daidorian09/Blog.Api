@@ -1,5 +1,24 @@
 import * as mongoose from 'mongoose'
 
+export interface IPost extends mongoose.Document {
+
+    header: string
+
+    text: string
+
+    author : string
+
+    isPrivate : string
+
+    tags : Array<string>
+
+    isActive : boolean
+
+    createdAt : Date
+
+    modifiedAt : Date | null
+}
+
 const PostSchema: mongoose.Schema = new mongoose.Schema({
     header: {
         type: String,
@@ -33,5 +52,7 @@ const PostSchema: mongoose.Schema = new mongoose.Schema({
     }
 })
 
-const Post = mongoose.model('posts', PostSchema)
+const Post = mongoose.model<IPost>('posts', PostSchema)
+
+Object.seal(Post)
 export default Post

@@ -1,26 +1,10 @@
-import mongoose from 'mongoose'
-
-export interface IUser extends mongoose.Document {
-    fullName: string
-
-    email: string
-
-    password: string
-
-    salt: string
-
-    accessFailedCount: number
-
-    lastLoggedInAt: number | Date
-
-    isActive: boolean
-
-    createdAt: Date
-
-    modifiedAt: Date | null
-}
-
-const UserSchema: mongoose.Schema = new mongoose.Schema({
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const mongoose_1 = __importDefault(require("mongoose"));
+const UserSchema = new mongoose_1.default.Schema({
     fullName: {
         type: String,
         default: null,
@@ -63,9 +47,7 @@ const UserSchema: mongoose.Schema = new mongoose.Schema({
         type: Date,
         default: null
     }
-})
-
-const User = mongoose.model<IUser>("users", UserSchema)
-Object.seal(User)
-
-export default User
+});
+const User = mongoose_1.default.model("users", UserSchema);
+Object.seal(User);
+exports.default = User;

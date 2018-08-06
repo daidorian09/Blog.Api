@@ -52,6 +52,7 @@ export class UserService implements IUserService {
     }
     
     async signIn(email: string, password: string): Promise<Response> {
+       
         const user = await this.find({email : email})
 
         if(!user) {
@@ -64,6 +65,14 @@ export class UserService implements IUserService {
 
         if(user.accessFailedCount == 5) {
             return new Response(false, statusCodes.BAD_REQUEST, {key : 'account', value : `${email}'s account has been suspended for invalid activities`})
+        }
+
+
+        const userTokenService = new UserTokenService()
+        const hasUserToken = await userTokenService.find({applicationUser : user._id, tokenType : TokenType.SignIn, isActive : true})
+
+        if(hasUserToken) {
+            return new Response(true, statusCodes.OK, {key : 'token', value : `Bearer ${hasUserToken.token}`})
         }
 
         const passwordAndSalt = password + user.salt
@@ -87,11 +96,25 @@ export class UserService implements IUserService {
             expiredAt : expiredAt
         }
 
-        const userTokenService = new UserTokenService()
+        
         await userTokenService.saveToken(userToken)
 
 
         return new Response(true, statusCodes.OK, {key : 'token', value : `Bearer ${token}`})
+    }
+
+    async signOut(token: string): Promise<Response> {
+        token = token.replace('Bearer ', '')
+        const userTokenService = new UserTokenService()
+        const userToken = await userTokenService.find({token : token, tokenType : TokenType.SignIn, isActive : true})
+
+        if(!userToken) {
+            return new Response(false, statusCodes.UNAUTHORIZED, {key : 'user', value : 'user can not sign out'})
+        }
+
+        await userTokenService.deActivateToken(userToken)
+
+        return new Response(true, statusCodes.OK, {key : 'id', value : userToken.applicationUser})
     }
 
 

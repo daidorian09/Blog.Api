@@ -5,6 +5,8 @@ export interface IGenericRepository <T> {
 
     findOne(predicate?: Object): Promise<T>
 
+    find(predicate? : Object) : Promise <T[]>
+
     create(entity: T): Promise<T>
 
     update(id: string, entity: T): Promise<T>

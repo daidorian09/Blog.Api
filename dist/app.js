@@ -16,7 +16,11 @@ const express_1 = __importDefault(require("express"));
 const jwtStrategy_1 = __importDefault(require("./lib/jwtStrategy"));
 require('dotenv').config();
 const authentication_api_1 = require("./routes/api/authentication.api");
+const user_api_1 = require("./routes/api/user.api");
+const post_api_1 = require("./routes/api/post.api");
 const authApi = new authentication_api_1.AuthenticationApi();
+const userApi = new user_api_1.UserApi();
+const postApi = new post_api_1.PostApi();
 class App {
     constructor() {
         this.app = express_1.default();
@@ -47,6 +51,8 @@ class App {
         const router = express_1.default.Router();
         this.app.use('/', router);
         this.app.use('/api/auth', authApi.router);
+        this.app.use('/api/user', userApi.router);
+        this.app.use('/api/post', postApi.router);
         return this;
     }
 }

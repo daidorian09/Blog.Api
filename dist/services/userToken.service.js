@@ -6,14 +6,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const UserToken_1 = __importDefault(require("../models/UserToken"));
 const generic_repository_1 = require("../repository/generic.repository");
 class UserTokenService {
-    find(predicate) {
-        throw new Error("Method not implemented.");
+    async find(predicate) {
+        return await new generic_repository_1.GenericRepository(UserToken_1.default).findOne(predicate);
     }
     async saveToken(token) {
         await new generic_repository_1.GenericRepository(UserToken_1.default).create(token);
     }
-    deActivateToken(email, password) {
-        throw new Error("Method not implemented.");
+    async deActivateToken(userToken) {
+        userToken.modifiedAt = Date.now();
+        userToken.isActive = !userToken.isActive;
+        await new generic_repository_1.GenericRepository(UserToken_1.default).update(userToken._id, userToken);
     }
 }
 exports.UserTokenService = UserTokenService;

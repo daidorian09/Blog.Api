@@ -1,14 +1,10 @@
 "use strict";
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const mongoose = __importStar(require("mongoose"));
-const PostSchema = new mongoose.Schema({
+const mongoose_1 = __importDefault(require("mongoose"));
+const PostSchema = new mongoose_1.default.Schema({
     header: {
         type: String,
         required: true,
@@ -18,7 +14,7 @@ const PostSchema = new mongoose.Schema({
         required: true
     },
     author: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose_1.default.Schema.Types.ObjectId,
         ref: 'users'
     },
     isPrivate: {
@@ -40,6 +36,6 @@ const PostSchema = new mongoose.Schema({
         default: null
     }
 });
-const Post = mongoose.model('posts', PostSchema);
+const Post = mongoose_1.default.model('posts', PostSchema);
 Object.seal(Post);
 exports.default = Post;

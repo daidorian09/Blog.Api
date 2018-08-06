@@ -5,5 +5,5 @@ export interface IUserTokenService {
 
     saveToken(token: UserToken): Promise<void>
 
-    deActivateToken(email : string, password : string) : Promise<boolean>
+    deActivateToken(UserToken : UserToken) : Promise<void>
 }

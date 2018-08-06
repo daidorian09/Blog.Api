@@ -12,6 +12,9 @@ class GenericRepository {
             _id: id
         }).lean().exec();
     }
+    async find(predicate) {
+        return await this._model.find(predicate).lean().exec();
+    }
     async findOne(predicate) {
         return await this._model.findOne(predicate).lean().exec();
     }

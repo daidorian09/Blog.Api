@@ -65,7 +65,7 @@ const UserSchema: mongoose.Schema = new mongoose.Schema({
     }
 })
 
-const User = mongoose.model<IUser>("users", UserSchema)
+const User = mongoose.model<IUser>("users", UserSchema, 'users')
 Object.seal(User)
 
 export default User

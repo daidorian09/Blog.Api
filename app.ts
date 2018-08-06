@@ -5,8 +5,12 @@ import jwtStrategy from './lib/jwtStrategy'
 require('dotenv').config()
 
 import { AuthenticationApi } from './routes/api/authentication.api'
+import { UserApi } from './routes/api/user.api'
+import { PostApi } from './routes/api/post.api'
 
 const authApi = new AuthenticationApi()
+const userApi = new UserApi()
+const postApi = new PostApi()
 
 class App {
   // set app to be of type express.Application
@@ -52,6 +56,8 @@ class App {
 
     this.app.use('/', router)
     this.app.use('/api/auth', authApi.router)
+    this.app.use('/api/user', userApi.router)
+    this.app.use('/api/post', postApi.router)
 
     return this
   }

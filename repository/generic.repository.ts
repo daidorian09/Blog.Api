@@ -16,6 +16,10 @@ export class GenericRepository <T extends mongoose.Document> implements IGeneric
         return await this._model.findOne({
             _id: id
         }).lean().exec()
+    }    
+
+    async find(predicate ? : Object | undefined): Promise <T[]> {
+        return await this._model.find(predicate).lean().exec()
     }
 
     async findOne(predicate? : Object): Promise<T> {

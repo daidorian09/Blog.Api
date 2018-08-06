@@ -49,6 +49,11 @@ class UserService {
         if (user.accessFailedCount == 5) {
             return new response_dto_1.Response(false, statusCodes_constant_1.default.BAD_REQUEST, { key: 'account', value: `${email}'s account has been suspended for invalid activities` });
         }
+        const userTokenService = new userToken_service_1.UserTokenService();
+        const hasUserToken = await userTokenService.find({ applicationUser: user._id, tokenType: UserToken_1.TokenType.SignIn, isActive: true });
+        if (hasUserToken) {
+            return new response_dto_1.Response(true, statusCodes_constant_1.default.OK, { key: 'token', value: `Bearer ${hasUserToken.token}` });
+        }
         const passwordAndSalt = password + user.salt;
         const passwordService = new password_service_1.PasswordService();
         const canUserSignIn = await passwordService.validatePassword(passwordAndSalt, user.password);
@@ -64,9 +69,18 @@ class UserService {
             tokenType: UserToken_1.TokenType.SignIn,
             expiredAt: expiredAt
         };
-        const userTokenService = new userToken_service_1.UserTokenService();
         await userTokenService.saveToken(userToken);
         return new response_dto_1.Response(true, statusCodes_constant_1.default.OK, { key: 'token', value: `Bearer ${token}` });
+    }
+    async signOut(token) {
+        token = token.replace('Bearer ', '');
+        const userTokenService = new userToken_service_1.UserTokenService();
+        const userToken = await userTokenService.find({ token: token, tokenType: UserToken_1.TokenType.SignIn, isActive: true });
+        if (!userToken) {
+            return new response_dto_1.Response(false, statusCodes_constant_1.default.UNAUTHORIZED, { key: 'user', value: 'user can not sign out' });
+        }
+        await userTokenService.deActivateToken(userToken);
+        return new response_dto_1.Response(true, statusCodes_constant_1.default.OK, { key: 'id', value: userToken.applicationUser });
     }
     async logUserLoginDate(user) {
         user.lastLoggedInAt = Date.now();

@@ -7,4 +7,6 @@ export interface IUserService {
     createUser(entity: User): Promise<Response>
 
     signIn(email : string, password : string) : Promise<Response>
+
+    signOut(token : string) : Promise<Response>
 }

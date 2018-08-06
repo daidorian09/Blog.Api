@@ -38,10 +38,12 @@ export class AuthenticationApi {
     res.status(result.statusCode).json(result)
   }
 
-  private signOut(req:Request, res: Response, ) : void {
-    const user = req.user
+  private async signOut(req:Request, res: Response) : Promise<void> {
+    const token = <string>req.headers.authorization
 
-    res.status(200).json(user)
+    const result = await new UserService().signOut(token)
+
+    res.status(result.statusCode).json(result)
   }
 
 

@@ -48,6 +48,6 @@ const UserSchema = new mongoose_1.default.Schema({
         default: null
     }
 });
-const User = mongoose_1.default.model("users", UserSchema);
+const User = mongoose_1.default.model("users", UserSchema, 'users');
 Object.seal(User);
 exports.default = User;

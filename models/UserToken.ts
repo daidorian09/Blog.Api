@@ -15,7 +15,7 @@ export interface IUserToken extends mongoose.Document {
 
     createdAt: Date
 
-    modifiedAt: Date | null
+    modifiedAt: Date | null | number
 
     expiredAt: Date | null | number
 }
@@ -49,7 +49,7 @@ const UserTokenSchema: mongoose.Schema = new mongoose.Schema({
     }
 })
 
-const UserToken = mongoose.model<IUserToken>('userTokens', UserTokenSchema)
+const UserToken = mongoose.model<IUserToken>('userTokens', UserTokenSchema, 'userTokens')
 
 Object.seal(UserToken)
 export default UserToken

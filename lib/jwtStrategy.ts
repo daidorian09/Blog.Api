@@ -3,26 +3,43 @@ import jwt, {  Secret } from 'jsonwebtoken'
 import passport from "passport"
 
 import User from '../models/User'
-import { TokenType } from "../models/UserToken"
+import { TokenType } from '../models/UserToken'
+
+
+import { ITokenGeneratorStrategy } from "../lib/strategy/interfaces/tokenGeneratorStrategy.interface"
+import { ConfirmAccountTokenStrategy } from '../lib/strategy/confirmAccountTokenStrategy'
+import { SignInTokenStrategy } from '../lib/strategy/signInTokenStrategy'
 
 require('dotenv').config()
 
+type JwtTokenGenerator = {
+    tokenType : TokenType,
+    strategy : ITokenGeneratorStrategy
+}
+
 class JwtStrategy {
     public init = () => {
+        
         passport.use("jwt", this.getStrategy())
         return passport.initialize()
     }
 
-    public generateJwtToken = (id: string, tokenType: TokenType): string => {
-        switch (tokenType) {
-            case TokenType.SignIn:
-                return this.generateConfirmAccountToken(id)
-                break;
-            case TokenType.ConfirmAccount:
-                return this.generateSignInToken(id)
-            default:
-                throw Error('Undefined token type')
-        }
+    public generateJwtToken = (id: string, tokenType: TokenType): string | undefined => {
+
+         const jwtTokenGeneratorArray: JwtTokenGenerator[] = []
+         jwtTokenGeneratorArray.push({tokenType : TokenType.SignIn, strategy : new SignInTokenStrategy() })
+         jwtTokenGeneratorArray.push({tokenType : TokenType.ConfirmAccount, strategy : new ConfirmAccountTokenStrategy() })
+
+        const tokenStrategy = jwtTokenGeneratorArray.map(item => {
+            if (item.tokenType === tokenType) {
+                return item.strategy.generateToken(id)
+            }
+            return
+        }).filter(token => {
+            return token
+        })
+
+       return tokenStrategy[0]
     }
 
     private getStrategy = (): Strategy => {
@@ -40,41 +57,17 @@ class JwtStrategy {
                         return done(err);
                     }
                     /* istanbul ignore next: passport response */
-                    if (user === null) {
+                    if (!user) {
                         return done(null, false, {
                             message: "The user in the token was not found"
-                        });
+                        })
                     }
 
                     return done(null, {
                         _id: user._id
-                    });
-                });
-        });
-    }
-
-    private generateConfirmAccountToken(id: string): string {
-        return jwt.sign({
-                id: id
-            },
-            process.env.JWTSECRET as Secret, {
-                expiresIn: process.env.CONFIRMATION_TOKEN_EXPIRE_DATE,
-                audience: process.env.JWT_AUDIENCE,
-                issuer: process.env.JWT_ISSUER,
-                noTimestamp: !!process.env.JWT_NO_TIMESTAMP
-            })
-    }
-
-    private generateSignInToken(id: string): string {
-        return jwt.sign({
-                id: id
-            },
-            process.env.JWTSECRET as Secret, {
-                expiresIn: process.env.JWT_EXPIRE_DATE,
-                audience: process.env.JWT_AUDIENCE,
-                issuer: process.env.JWT_ISSUER,
-                noTimestamp: !!process.env.JWT_NO_TIMESTAMP
-            })
+                    })
+                })
+        })
     }
 }
 

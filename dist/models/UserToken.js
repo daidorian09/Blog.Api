@@ -37,6 +37,6 @@ const UserTokenSchema = new mongoose_1.default.Schema({
         default: null
     }
 });
-const UserToken = mongoose_1.default.model('userTokens', UserTokenSchema);
+const UserToken = mongoose_1.default.model('userTokens', UserTokenSchema, 'userTokens');
 Object.seal(UserToken);
 exports.default = UserToken;

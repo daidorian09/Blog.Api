@@ -4,10 +4,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const passport_jwt_1 = require("passport-jwt");
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const passport_1 = __importDefault(require("passport"));
 const User_1 = __importDefault(require("../models/User"));
 const UserToken_1 = require("../models/UserToken");
+const confirmAccountTokenStrategy_1 = require("../lib/strategy/confirmAccountTokenStrategy");
+const signInTokenStrategy_1 = require("../lib/strategy/signInTokenStrategy");
 require('dotenv').config();
 class JwtStrategy {
     constructor() {
@@ -16,15 +17,18 @@ class JwtStrategy {
             return passport_1.default.initialize();
         };
         this.generateJwtToken = (id, tokenType) => {
-            switch (tokenType) {
-                case UserToken_1.TokenType.SignIn:
-                    return this.generateConfirmAccountToken(id);
-                    break;
-                case UserToken_1.TokenType.ConfirmAccount:
-                    return this.generateSignInToken(id);
-                default:
-                    throw Error('Undefined token type');
-            }
+            const jwtTokenGeneratorArray = [];
+            jwtTokenGeneratorArray.push({ tokenType: UserToken_1.TokenType.SignIn, strategy: new signInTokenStrategy_1.SignInTokenStrategy() });
+            jwtTokenGeneratorArray.push({ tokenType: UserToken_1.TokenType.ConfirmAccount, strategy: new confirmAccountTokenStrategy_1.ConfirmAccountTokenStrategy() });
+            const tokenStrategy = jwtTokenGeneratorArray.map(item => {
+                if (item.tokenType === tokenType) {
+                    return item.strategy.generateToken(id);
+                }
+                return;
+            }).filter(token => {
+                return token;
+            });
+            return tokenStrategy[0];
         };
         this.getStrategy = () => {
             const params = {
@@ -39,7 +43,7 @@ class JwtStrategy {
                         return done(err);
                     }
                     /* istanbul ignore next: passport response */
-                    if (user === null) {
+                    if (!user) {
                         return done(null, false, {
                             message: "The user in the token was not found"
                         });
@@ -50,26 +54,6 @@ class JwtStrategy {
                 });
             });
         };
-    }
-    generateConfirmAccountToken(id) {
-        return jsonwebtoken_1.default.sign({
-            id: id
-        }, process.env.JWTSECRET, {
-            expiresIn: process.env.CONFIRMATION_TOKEN_EXPIRE_DATE,
-            audience: process.env.JWT_AUDIENCE,
-            issuer: process.env.JWT_ISSUER,
-            noTimestamp: !!process.env.JWT_NO_TIMESTAMP
-        });
-    }
-    generateSignInToken(id) {
-        return jsonwebtoken_1.default.sign({
-            id: id
-        }, process.env.JWTSECRET, {
-            expiresIn: process.env.JWT_EXPIRE_DATE,
-            audience: process.env.JWT_AUDIENCE,
-            issuer: process.env.JWT_ISSUER,
-            noTimestamp: !!process.env.JWT_NO_TIMESTAMP
-        });
     }
 }
 exports.default = new JwtStrategy();

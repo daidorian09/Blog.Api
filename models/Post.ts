@@ -1,4 +1,4 @@
-import * as mongoose from 'mongoose'
+import mongoose from 'mongoose'
 
 export interface IPost extends mongoose.Document {
 
@@ -16,7 +16,7 @@ export interface IPost extends mongoose.Document {
 
     createdAt : Date
 
-    modifiedAt : Date | null
+    modifiedAt : Date | null | number
 }
 
 const PostSchema: mongoose.Schema = new mongoose.Schema({

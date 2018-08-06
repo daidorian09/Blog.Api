@@ -29,9 +29,10 @@ class AuthenticationApi {
         const result = await new user_service_1.UserService().signIn(user.email, user.password);
         res.status(result.statusCode).json(result);
     }
-    signOut(req, res) {
-        const user = req.user;
-        res.status(200).json(user);
+    async signOut(req, res) {
+        const token = req.headers.authorization;
+        const result = await new user_service_1.UserService().signOut(token);
+        res.status(result.statusCode).json(result);
     }
     routes() {
         this.router.get('/test', this.one);

@@ -52,7 +52,9 @@ const PostSchema: mongoose.Schema = new mongoose.Schema({
     }
 })
 
+
 const Post = mongoose.model<IPost>('posts', PostSchema)
+PostSchema.index({header: 'text', tags: 'text'}, {default_language: 'english'});
 
 Object.seal(Post)
 export default Post

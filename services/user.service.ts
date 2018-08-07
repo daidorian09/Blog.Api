@@ -8,6 +8,7 @@ import { GenericRepository } from '../repository/generic.repository'
 import User, { IUser as UserModel } from '../models/User'
 import { Response } from '../dto/response.dto'
 import statusCodes from '../const/statusCodes.constant'
+import validationConfig from '../const/validationConfig.constat'
 import { IUserToken as UserToken, TokenType } from '../models/UserToken'
 
 import { calculateExpireDate } from '../lib/expireDateCalculator'
@@ -63,10 +64,9 @@ export class UserService implements IUserService {
             return new Response(false, statusCodes.BAD_REQUEST, {key : 'activation', value : 'User did not active its account'})
         }
 
-        if(user.accessFailedCount == 5) {
+        if(user.accessFailedCount == validationConfig.MaximumNumberOfAccessCount) {
             return new Response(false, statusCodes.BAD_REQUEST, {key : 'account', value : `${email}'s account has been suspended for invalid activities`})
         }
-
 
         const userTokenService = new UserTokenService()
         const hasUserToken = await userTokenService.find({applicationUser : user._id, tokenType : TokenType.SignIn, isActive : true})
@@ -96,9 +96,7 @@ export class UserService implements IUserService {
             expiredAt : expiredAt
         }
 
-        
         await userTokenService.saveToken(userToken)
-
 
         return new Response(true, statusCodes.OK, {key : 'token', value : `Bearer ${token}`})
     }

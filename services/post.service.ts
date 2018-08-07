@@ -10,7 +10,7 @@ import { UserTokenService } from './userToken.service';
 import { TokenType } from '../models/UserToken';
 
 export class PostService implements IPostService {
-
+ 
     private readonly _genericRepository : GenericRepository<PostModel>
     private readonly _userToUserService : UserToUserService
 
@@ -21,7 +21,7 @@ export class PostService implements IPostService {
         this._userToUserService = new UserToUserService()
         this._userTokenService = new UserTokenService()
     }
-    async find(predicate? : Object) : Promise<PostModel> {
+    private async find(predicate? : Object) : Promise<PostModel> {
         return await this._genericRepository.findOne(predicate) as PostModel
     }
 
@@ -46,7 +46,7 @@ export class PostService implements IPostService {
         return new Response(true, statusCodes.CREATED, {key : 'post', value : newPost._id})
     }
 
-    async displayPosts(follower : string) : Promise<Response> {
+    async getPosts(follower : string) : Promise<Response> {
 
         const userToken = await this.findUserToken(follower)
 
@@ -60,7 +60,7 @@ export class PostService implements IPostService {
             return new Response(true, statusCodes.NO_CONTENT, {key:'posts', value: followeds})
         }
 
-        const followedIds : string[] = []
+        const followedIds : Array<string> = []
          followeds.filter(item => {
             if(item.followed) {
                 followedIds.push(item.followed)
@@ -80,6 +80,66 @@ export class PostService implements IPostService {
 
         return new Response(true, statusCodes.OK, {key : "posts", value: followedsPosts })
     }
+
+    async getPost(postId : string, userId : string) : Promise<Response> {
+
+        const userToken = await this.findUserToken(userId)
+
+        if(!userToken) {
+            return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
+        }
+
+        const post = await this.find({_id : postId, isActive : true})
+
+        if(!post) {
+            return new Response(false, statusCodes.NOT_FOUND, {key : 'post', value : 'post is not found'})
+        }
+
+        if(post.author.toString() === userId.toString()) {
+            return new Response(true, statusCodes.OK, {key : 'post', value : post})
+        }
+
+        const userToUser = await this._userToUserService.find({followed : post.author, follower : userId  ,isActive : true})
+
+        if(!userToUser[0]) {
+            return new Response(false, statusCodes.NOT_FOUND, {key : 'post', value : 'post is not found'})
+        }
+
+        if(userToUser[0].followed.toString() === post.author.toString() && post.isPrivate) {
+            return new Response(false, statusCodes.UNAUTHORIZED, {key : 'post', value: 'post status is private'})
+        }
+        
+        return new Response(true, statusCodes.OK, {key : 'post', value : post})
+    }
+
+    async search(predicate?: any): Promise<Response> {
+        const userToken = await this.findUserToken(predicate.userId)
+
+        if(!userToken) {
+            return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
+        }
+
+        const searchArray :Array<string> = predicate.q.trim().split(/\s+/)
+        const searchResult = await this._genericRepository.find({
+            $or: [{
+                tags: {
+                    $in: searchArray
+                }
+            }, {
+                header: new RegExp(predicate.q.trim(), 'i')
+            }],
+                isActive: true,
+                isPrivate : false
+        })
+
+        if(searchResult.length === 0) {
+            return new Response(false, statusCodes.NOT_FOUND, {key:'search', value : searchResult})
+        }
+
+        return new Response(true, statusCodes.OK, {key : 'search', value : searchResult})
+    }
+
+
 
     private async findUserToken(applicationUser : string) : Promise<boolean> {
         const userToken = await this._userTokenService.find({applicationUser : applicationUser, isActive : true, tokenType : TokenType.SignIn})

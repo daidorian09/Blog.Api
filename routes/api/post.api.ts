@@ -20,10 +20,33 @@ export class PostApi {
     res.status(result.statusCode).json(result)
   }
 
-  public async displayPosts(req: Request, res:Response): Promise<void> {
+  public async getPosts(req: Request, res:Response): Promise<void> {
     const follower = <string>req.user._id
 
-    const result = await new PostService().displayPosts(follower)
+    const result = await new PostService().getPosts(follower)
+
+    res.status(result.statusCode).json(result)
+  }
+
+  public async getPost(req: Request, res:Response) : Promise<void> {
+    const postId = <string>req.params.postId
+    const follower =  <string>req.user._id
+
+    const result = await new PostService().getPost(postId, follower)
+
+    res.status(result.statusCode).json(result)
+  }
+
+  public async search(req: Request, res : Response) : Promise<void> {
+    const query = req.params.q
+    const userId =  <string>req.user._id
+
+    const data  = {
+      q : query,
+      userId : userId
+    }
+
+    const result = await new PostService().search(data)
 
     res.status(result.statusCode).json(result)
   }
@@ -34,9 +57,15 @@ export class PostApi {
     this.router.post('/post', passport.authenticate('jwt', {
       session: false
     }), this.post)
-    this.router.post('/display-posts', passport.authenticate('jwt', {
+    this.router.get('/get-posts', passport.authenticate('jwt', {
       session: false
-    }), this.displayPosts)
+    }), this.getPosts)
+    this.router.get('/get-post/:postId', passport.authenticate('jwt', {
+      session: false
+    }), this.getPost)
+    this.router.get('/search/:q', passport.authenticate('jwt', {
+      session: false
+    }), this.search)
   }
 }
 

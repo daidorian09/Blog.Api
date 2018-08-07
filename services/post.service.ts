@@ -4,25 +4,20 @@ import { GenericRepository } from '../repository/generic.repository'
 
 import { Response } from '../dto/response.dto'
 import statusCodes from '../const/statusCodes.constant'
-import { UserService } from './user.service';
-import { UserToUserService } from './userToUser.service';
-import { UserTokenService } from './userToken.service';
-import { TokenType } from '../models/UserToken';
 
+import { UserToUserService } from './userToUser.service'
+import { UserTokenService } from './userToken.service'
+import { TokenType } from '../models/UserToken'
+import { Singleton } from 'typescript-ioc'
+
+@Singleton
 export class PostService implements IPostService {
  
-    private readonly _genericRepository : GenericRepository<PostModel>
-    private readonly _userToUserService : UserToUserService
-
-    private readonly _userTokenService : UserTokenService
-
-    constructor() {
-        this._genericRepository = new GenericRepository(Post)
-        this._userToUserService = new UserToUserService()
-        this._userTokenService = new UserTokenService()
-    }
+    private readonly _genericRepository : GenericRepository<PostModel> = new GenericRepository(Post)
+    private readonly _userToUserService : UserToUserService = new UserToUserService()
+    private readonly _userTokenService : UserTokenService = new UserTokenService()
     private async find(predicate? : Object) : Promise<PostModel> {
-        return await this._genericRepository.findOne(predicate) as PostModel
+        return await this._genericRepository.findOne(predicate)
     }
 
     async upsert(post : PostModel) : Promise<Response> {

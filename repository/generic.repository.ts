@@ -1,10 +1,14 @@
 import mongoose from 'mongoose'
+import { Singleton, Inject } from "typescript-ioc"
 import { IGenericRepository } from './interfaces/genericRepository.interface'
+
+@Singleton
 export class GenericRepository <T extends mongoose.Document> implements IGenericRepository <T> {
 
+    @Inject 
     private _model: mongoose.Model <mongoose.Document>
 
-        constructor(schema: mongoose.Model < mongoose.Document > ) {
+        constructor(schema: mongoose.Model <mongoose.Document>) {
             this._model = schema
         }
 

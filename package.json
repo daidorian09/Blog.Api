@@ -53,6 +53,7 @@
     "mongoose": "^5.2.6",
     "ms": "^2.1.1",
     "passport": "^0.4.0",
-    "passport-jwt": "^4.0.0"
+    "passport-jwt": "^4.0.0",
+    "typescript-ioc": "^1.2.4"
   }
 }

@@ -6,6 +6,8 @@ import passport from 'passport'
 export class UserApi {
   public router: Router
 
+  private readonly _userToUserService : UserToUserService = new UserToUserService()
+
   constructor() {
     this.router = Router()
     this.routes()
@@ -16,7 +18,7 @@ export class UserApi {
       const userToUser: UserToUser = <UserToUser> req.body
       userToUser.follower = req.user._id
 
-      const result = await new UserToUserService().follow(userToUser)
+      const result = await this._userToUserService.follow(userToUser)
 
       res.status(result.statusCode).json(result)
   }
@@ -26,7 +28,7 @@ export class UserApi {
       const userToUser: UserToUser = <UserToUser>req.body
       userToUser.follower = req.user._id
 
-      const result = await new UserToUserService().unfollow(userToUser)
+      const result = await this._userToUserService.unfollow(userToUser)
 
       res.status(result.statusCode).json(result)
   }
@@ -34,10 +36,10 @@ export class UserApi {
   public routes() {
       this.router.post('/follow', passport.authenticate('jwt', {
         session: false
-      }), this.follow)
+      }), this.follow.bind(this))
       this.router.post('/unfollow', passport.authenticate('jwt', {
         session: false
-      }), this.unfollow)
+      }), this.unfollow.bind(this))
   }
 }
 

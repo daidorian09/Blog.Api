@@ -12,15 +12,21 @@ import validationConfig from '../const/validationConfig.constat'
 import { IUserToken as UserToken, TokenType } from '../models/UserToken'
 
 import { calculateExpireDate } from '../lib/expireDateCalculator'
+import { Singleton } from 'typescript-ioc'
 
 require('dotenv').config()
 
 
-export class UserService implements IUserService {
-    async find(predicate?: object): Promise<UserModel> {
-        
-        return await new GenericRepository(User).findOne(predicate) as UserModel
+@Singleton
+export class UserService implements IUserService {       
+    private readonly _genericRepository : GenericRepository<UserModel> = new GenericRepository(User)
+    private readonly _passwordService : PasswordService = new PasswordService()
 
+    private readonly _userTokenService : UserTokenService = new UserTokenService()
+
+    async find(predicate?: object): Promise<UserModel> {
+
+        return await this._genericRepository.findOne(predicate)
     } 
     async createUser(entity: UserModel): Promise<Response> {
 
@@ -30,9 +36,8 @@ export class UserService implements IUserService {
            return new Response(false, statusCodes.CONFLICT, {key : 'user', value : `${user.email} has already registered`})
         }
 
-        const passwordService = new  PasswordService()
-        entity.salt = await passwordService.generateSalt()
-        entity.password = await passwordService.hashPassword(entity.password + entity.salt)
+        entity.salt = await this._passwordService.generateSalt()
+        entity.password = await this._passwordService.hashPassword(entity.password + entity.salt)
 
         const newUser = await new GenericRepository(User).create(entity)
 
@@ -45,9 +50,7 @@ export class UserService implements IUserService {
             tokenType : TokenType.ConfirmAccount,
             expiredAt : expiredAt
         }
-
-        const userTokenService = new UserTokenService()
-        await userTokenService.saveToken(userToken)
+        await this._userTokenService.saveToken(userToken)
 
         return new Response(true, statusCodes.CREATED, {key : 'user', value : newUser.id})
     }
@@ -68,17 +71,14 @@ export class UserService implements IUserService {
             return new Response(false, statusCodes.BAD_REQUEST, {key : 'account', value : `${email}'s account has been suspended for invalid activities`})
         }
 
-        const userTokenService = new UserTokenService()
-        const hasUserToken = await userTokenService.find({applicationUser : user._id, tokenType : TokenType.SignIn, isActive : true})
+        const hasUserToken = await this._userTokenService.find({applicationUser : user._id, tokenType : TokenType.SignIn, isActive : true})
 
         if(hasUserToken) {
             return new Response(true, statusCodes.OK, {key : 'token', value : `Bearer ${hasUserToken.token}`})
         }
 
         const passwordAndSalt = password + user.salt
-
-        const passwordService = new  PasswordService()
-        const canUserSignIn = await passwordService.validatePassword(passwordAndSalt, user.password)
+        const canUserSignIn = await this._passwordService.validatePassword(passwordAndSalt, user.password)
 
         if(!canUserSignIn) {
             return await this.increaseAccessFailedCount(user);
@@ -96,21 +96,20 @@ export class UserService implements IUserService {
             expiredAt : expiredAt
         }
 
-        await userTokenService.saveToken(userToken)
+        await this._userTokenService.saveToken(userToken)
 
         return new Response(true, statusCodes.OK, {key : 'token', value : `Bearer ${token}`})
     }
 
     async signOut(token: string): Promise<Response> {
         token = token.replace('Bearer ', '')
-        const userTokenService = new UserTokenService()
-        const userToken = await userTokenService.find({token : token, tokenType : TokenType.SignIn, isActive : true})
+        const userToken = await this._userTokenService.find({token : token, tokenType : TokenType.SignIn, isActive : true})
 
         if(!userToken) {
             return new Response(false, statusCodes.UNAUTHORIZED, {key : 'user', value : 'user can not sign out'})
         }
 
-        await userTokenService.deActivateToken(userToken)
+        await this._userTokenService.deActivateToken(userToken)
 
         return new Response(true, statusCodes.OK, {key : 'id', value : userToken.applicationUser})
     }
@@ -123,8 +122,8 @@ export class UserService implements IUserService {
     }
 
     private async increaseAccessFailedCount(user: UserModel) {
-        user.accessFailedCount = user.accessFailedCount + 1;
-        await new GenericRepository(User).update(user._id, user);
-        return new Response(false, statusCodes.BAD_REQUEST, { key: 'password', value: 'password is invalid' });
+        user.accessFailedCount = user.accessFailedCount + 1
+        await this._genericRepository.update(user._id, user)
+        return new Response(false, statusCodes.BAD_REQUEST, { key: 'password', value: 'password is invalid' })
     }
 }

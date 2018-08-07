@@ -6,6 +6,8 @@ import passport from 'passport'
 export class AuthenticationApi {
   public router: Router
 
+  private _userService: UserService = new UserService()
+
   constructor() {
     this.router = Router()
     this.routes()
@@ -24,7 +26,7 @@ export class AuthenticationApi {
   public async signUp(req: Request, res:Response): Promise<void> {
     const user : User = <User>req.body
 
-    const result = await new UserService().createUser(user)
+    const result = await this._userService.createUser(user)
 
     res.status(result.statusCode).json(result)
   }
@@ -33,7 +35,7 @@ export class AuthenticationApi {
 
     const user : User = <User>req.body
 
-    const result = await new UserService().signIn(user.email, user.password)
+    const result = await this._userService.signIn(user.email, user.password)
 
     res.status(result.statusCode).json(result)
   }
@@ -41,19 +43,18 @@ export class AuthenticationApi {
   private async signOut(req:Request, res: Response) : Promise<void> {
     const token = <string>req.headers.authorization
 
-    const result = await new UserService().signOut(token)
+    const result = await this._userService.signOut(token)
 
     res.status(result.statusCode).json(result)
   }
 
 
   public routes() {
-    this.router.get('/test', this.one)
-    this.router.post('/sign-up', this.signUp)
-    this.router.post('/sign-in', this.signIn)
+    this.router.post('/sign-up', this.signUp.bind(this))
+    this.router.post('/sign-in', this.signIn.bind(this))
     this.router.post('/sign-out', passport.authenticate('jwt', {
       session: false
-    }), this.signOut)
+    }), this.signOut.bind(this))
   }
 }
 

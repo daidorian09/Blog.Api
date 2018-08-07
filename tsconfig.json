@@ -5,6 +5,10 @@
       "baseUrl": ".",
       "module": "commonjs",
       "target": "es2018",
+      "lib": [
+        "es2018", 
+        "dom"
+      ],
       "sourceMap": true,
       "moduleResolution": "node",
       "forceConsistentCasingInFileNames": true,

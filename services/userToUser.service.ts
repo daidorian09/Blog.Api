@@ -5,16 +5,17 @@ import { GenericRepository } from '../repository/generic.repository'
 import { Response } from '../dto/response.dto'
 import statusCodes from '../const/statusCodes.constant';
 import { UserService } from './user.service';
+import { Singleton } from 'typescript-ioc'
 
+@Singleton
 export class UserToUserService implements IUserToUserService {
 
-    private readonly _userService : UserService
+    private readonly _userService : UserService = new UserService()
+    private readonly _genericRepository : GenericRepository<userToUserModel> = new GenericRepository(UserToUser)
 
-    constructor() {
-        this._userService = new UserService()
-    }
     async find(predicate?: object | undefined): Promise<userToUserModel[]> {
-        return await new GenericRepository(UserToUser).find(predicate) as userToUserModel[]
+
+        return await this._genericRepository.find(predicate)
     }     
     
     async follow(userToUser: userToUserModel): Promise<Response> {
@@ -35,7 +36,7 @@ export class UserToUserService implements IUserToUserService {
             return new Response(false, statusCodes.BAD_REQUEST, {key : 'followed', value : 'follower has already followed the other user'})
         }
 
-        const newUserToUser = await new GenericRepository(UserToUser).create(userToUser)
+        const newUserToUser = await this._genericRepository.create(userToUser)
 
         return new Response(true, statusCodes.CREATED, {key : 'id', value : newUserToUser._id})
     }
@@ -60,7 +61,7 @@ export class UserToUserService implements IUserToUserService {
         followedUser.isActive = !followedUser.isActive
         followedUser.modifiedAt = Date.now()
         
-        await new GenericRepository(UserToUser).update(followedUser._id, followedUser) 
+        await this._genericRepository.update(followedUser._id, followedUser)
 
         return new Response(true, statusCodes.OK, {key : 'id', value: followedUser._id})
     }   

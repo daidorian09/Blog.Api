@@ -17,7 +17,7 @@ export interface IUser extends mongoose.Document {
 
     createdAt: Date
 
-    modifiedAt: Date | null
+    modifiedAt: Date | null | number
 }
 
 const UserSchema: mongoose.Schema = new mongoose.Schema({

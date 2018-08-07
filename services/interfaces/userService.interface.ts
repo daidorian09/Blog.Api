@@ -9,4 +9,6 @@ export interface IUserService {
     signIn(email : string, password : string) : Promise<Response>
 
     signOut(token : string) : Promise<Response>
+
+    confirmAccount(token : string) : Promise<Response>
 }

@@ -12,18 +12,7 @@ export class AuthenticationApi {
     this.router = Router()
     this.routes()
   }
-
-  // get a single post by params of 'slug'
-  public one(req: Request, res: Response): void {
-    const { slug } = req.params
-
-    res.status(200).json({
-        key : "test",
-        value : "test"
-    })
-  }
-
-  public async signUp(req: Request, res:Response): Promise<void> {
+  private async signUp(req: Request, res:Response): Promise<void> {
     const user : User = <User>req.body
 
     const result = await this._userService.createUser(user)
@@ -31,7 +20,7 @@ export class AuthenticationApi {
     res.status(result.statusCode).json(result)
   }
 
-  public async signIn(req: Request, res : Response) : Promise<void> {
+  private async signIn(req: Request, res : Response) : Promise<void> {
 
     const user : User = <User>req.body
 
@@ -48,6 +37,15 @@ export class AuthenticationApi {
     res.status(result.statusCode).json(result)
   }
 
+  private async confirmAccount(req : Request, res : Response) : Promise<void> {
+    const token = <string>req.params.token
+
+    const result = await this._userService.confirmAccount(token)
+
+    res.status(result.statusCode).json(result)
+
+  }
+
 
   public routes() {
     this.router.post('/sign-up', this.signUp.bind(this))
@@ -55,6 +53,7 @@ export class AuthenticationApi {
     this.router.post('/sign-out', passport.authenticate('jwt', {
       session: false
     }), this.signOut.bind(this))
+    this.router.post('/confirm-account/:token', this.confirmAccount.bind(this))
   }
 }
 

@@ -70,12 +70,14 @@ export class UserService implements IUserService {
         return new Response(true, statusCodes.CREATED, {key : 'user', value : newUser._id})
     }
     
-    private async saveTokenForUser(userId : string, tokenType : TokenType) : Promise<void> {
-        const token = jwtStrategy.generateJwtToken(userId, tokenType)
+    private async saveTokenForUser(userId : string, tokenType : TokenType) : Promise<string> {
+        const token = <string>jwtStrategy.generateJwtToken(userId, tokenType)
 
         const expiredAt = this.getExpireDate(tokenType)
         
         await this.saveUserToken(userId, token, expiredAt, tokenType)
+
+        return token
     }
 
     private getExpireDate(tokenType : TokenType) : Date {
@@ -105,32 +107,22 @@ export class UserService implements IUserService {
             return new Response(false, statusCodes.BAD_REQUEST, {key : 'account', value : `${email}'s account has been suspended for invalid activities`})
         }
 
-        const hasUserToken = await this._userTokenService.find({applicationUser : user._id, tokenType : TokenType.SignIn, isActive : true})
-
-        if(hasUserToken) {
-            return new Response(true, statusCodes.OK, {key : 'token', value : `Bearer ${hasUserToken.token}`})
-        }
-
         const passwordAndSalt = password + user.salt
         const canUserSignIn = await this._passwordService.validatePassword(passwordAndSalt, user.password)
 
         if(!canUserSignIn) {
-            return await this.increaseAccessFailedCount(user);
+            return await this.increaseAccessFailedCount(user)
         }
 
-        await this.logUserLoginDate(user);
+        const hasUserToken = await this._userTokenService.find({applicationUser : user._id, tokenType : TokenType.SignIn, isActive : true})
 
-        const token = jwtStrategy.generateJwtToken(user._id, TokenType.SignIn)
-        const expiredAt = calculateExpireDate(process.env.JWT_EXPIRE_DATE)
+        if(hasUserToken) {
+            return new Response(true, statusCodes.OK, {key : 'token', value : `Bearer ${hasUserToken.token}`})
+        }       
 
-        const userToken = <UserToken>{
-            applicationUser : user._id,
-            token : token,
-            tokenType : TokenType.SignIn,
-            expiredAt : expiredAt
-        }
+        await this.logUserLoginDate(user)
 
-        await this._userTokenService.saveToken(userToken)
+        const token = await this.saveTokenForUser(user._id, TokenType.SignIn)
 
         return new Response(true, statusCodes.OK, {key : 'token', value : `Bearer ${token}`})
     }
@@ -188,6 +180,7 @@ export class UserService implements IUserService {
 
     private async increaseAccessFailedCount(user: UserModel) : Promise<Response> {
         user.accessFailedCount = user.accessFailedCount + 1
+        user.modifiedAt = Date.now()
         await this._genericRepository.update(user._id, user)
         return new Response(false, statusCodes.BAD_REQUEST, { key: 'password', value: 'password is invalid' })
     }

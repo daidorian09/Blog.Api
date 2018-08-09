@@ -24,63 +24,71 @@ export class UserToUserService implements IUserToUserService {
     
     async follow(userToUser: userToUserModel, token : string): Promise<Response> {
 
-        const userToken = await this._userToken.validateUserAuthenticationToken(userToUser.follower, token, TokenType.SignIn)
+        try {
+            const userToken = await this._userToken.validateUserAuthenticationToken(userToUser.follower, token, TokenType.SignIn)
 
-        if(!userToken) {
-            return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
-        }
+            if(!userToken) {
+                return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
+            }
         
-        const candidateFollowedUserValidationResponse = await this.validateCandidateFollowedUser(userToUser.followed)
+            const candidateFollowedUserValidationResponse = await this.validateCandidateFollowedUser(userToUser.followed)
 
-        if(candidateFollowedUserValidationResponse) {
-            return candidateFollowedUserValidationResponse
-        }
+            if(candidateFollowedUserValidationResponse) {
+                return candidateFollowedUserValidationResponse
+            }
 
-        if(userToUser.follower === userToUser.followed) {
-            return new Response(false, statusCodes.BAD_REQUEST, {key : 'followed', value : 'follower can not follow on yourself'})
-        }
+            if(userToUser.follower === userToUser.followed) {
+                return new Response(false, statusCodes.BAD_REQUEST, {key : 'followed', value : 'follower can not follow on yourself'})
+             }
 
-        const followedUser = await this.findFollowedUser(userToUser)
+            const followedUser = await this.findFollowedUser(userToUser)
 
-        if(followedUser) {
-            return new Response(false, statusCodes.BAD_REQUEST, {key : 'followed', value : 'follower has already followed the other user'})
-        }
+            if(followedUser) {
+                return new Response(false, statusCodes.BAD_REQUEST, {key : 'followed', value : 'follower has already followed the other user'})
+            }
 
-        const newUserToUser = await this._genericRepository.create(userToUser)
+            const newUserToUser = await this._genericRepository.create(userToUser)
 
-        return new Response(true, statusCodes.CREATED, {key : 'id', value : newUserToUser._id})
+            return new Response(true, statusCodes.CREATED, {key : 'id', value : newUserToUser._id})
+            }  catch (error) {
+                return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+            }  
+        
     }
     async unfollow(userToUser: userToUserModel, token : string): Promise<Response> {
+        try {
+            const userToken = await this._userToken.validateUserAuthenticationToken(userToUser.follower, token, TokenType.SignIn)
 
-        const userToken = await this._userToken.validateUserAuthenticationToken(userToUser.follower, token, TokenType.SignIn)
-
-        if(!userToken) {
-            return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
-        }
-
-
-        const candidateFollowedUserValidationResponse = await this.validateCandidateFollowedUser(userToUser.followed)
-
-        if(candidateFollowedUserValidationResponse) {
-            return candidateFollowedUserValidationResponse
-        }
-
-        if(userToUser.follower === userToUser.followed) {
-            return new Response(false, statusCodes.BAD_REQUEST, {key : 'followed', value : 'follower can not unfollow on yourself'})
-        }
-
-        const followedUser = await this.findFollowedUser(userToUser)
-
-        if(!followedUser) {
-            return new Response(false, statusCodes.BAD_REQUEST, {key : 'userToUser', value : 'invalid followed user'})     
-        }
-
-        followedUser.isActive = !followedUser.isActive
-        followedUser.modifiedAt = Date.now()
-        
-        await this._genericRepository.update(followedUser._id, followedUser)
-
-        return new Response(true, statusCodes.OK, {key : 'id', value: followedUser._id})
+            if(!userToken) {
+                return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
+            }
+    
+    
+            const candidateFollowedUserValidationResponse = await this.validateCandidateFollowedUser(userToUser.followed)
+    
+            if(candidateFollowedUserValidationResponse) {
+                return candidateFollowedUserValidationResponse
+            }
+    
+            if(userToUser.follower === userToUser.followed) {
+                return new Response(false, statusCodes.BAD_REQUEST, {key : 'followed', value : 'follower can not unfollow on yourself'})
+            }
+    
+            const followedUser = await this.findFollowedUser(userToUser)
+    
+            if(!followedUser) {
+                return new Response(false, statusCodes.BAD_REQUEST, {key : 'userToUser', value : 'invalid followed user'})     
+            }
+    
+            followedUser.isActive = !followedUser.isActive
+            followedUser.modifiedAt = Date.now()
+            
+            await this._genericRepository.update(followedUser._id, followedUser)
+    
+            return new Response(true, statusCodes.OK, {key : 'id', value: followedUser._id})
+        } catch (error) {
+            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+        }       
     }   
 
     private async findFollowedUser(userToUser: userToUserModel) : Promise<userToUserModel> {

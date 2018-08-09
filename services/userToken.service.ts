@@ -12,7 +12,6 @@ type AuthenticationTokenValidators = {
     validatorStrategy : IAuthTokenValidatorStrategy
 }
 
-
 @Singleton
 export class UserTokenService implements IUserTokenService {
 
@@ -49,21 +48,6 @@ export class UserTokenService implements IUserTokenService {
 
         const result = await validationResult[0]
 
-        return !!result
-        
-    }
-
-    private async isUserAuthenticationTokenActive(user: string, token: string, tokenType: TokenType) : Promise<boolean> {
-        switch (tokenType) {
-            case TokenType.SignIn:
-            token = token.replace('Bearer ', '')
-
-            const userToken = await this.find({applicationUser : user, isActive : true, tokenType : TokenType.SignIn, token : token})
-
-            return !!userToken
-
-            default : 
-            return false
-        }
+        return !!result   
     }
 }

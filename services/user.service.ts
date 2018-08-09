@@ -34,7 +34,8 @@ export class UserService implements IUserService {
     } 
     async createUser(entity: UserModel): Promise<Response> {
 
-        const { error } = validateSignUpFields(entity)
+        try {
+            const { error } = validateSignUpFields(entity)
 
         if(error) {
             const {key, value } = mapErrorObject(error.details)
@@ -57,6 +58,9 @@ export class UserService implements IUserService {
         await this.sendNotification(token, newUser.email)
 
         return new Response(true, statusCodes.CREATED, {key : 'user', value : newUser._id})
+        } catch (error) {
+            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+        }        
     }
 
     private async reSignUpCreatedUser(createdUser : UserModel) : Promise<Response> {
@@ -122,7 +126,8 @@ export class UserService implements IUserService {
 
     async signIn(email: string, password: string): Promise<Response> {
 
-        const { error } = validateSignInFields(email, password)
+        try {
+            const { error } = validateSignInFields(email, password)
 
         if(error) {
             const {key, value } = mapErrorObject(error.details)
@@ -161,24 +166,33 @@ export class UserService implements IUserService {
         const token = await this.saveTokenForUser(user._id, TokenType.SignIn)
 
         return new Response(true, statusCodes.OK, {key : 'token', value : `Bearer ${token}`})
+        } catch (error) {
+            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+        }        
     }
 
     async signOut(token: string): Promise<Response> {
-        token = token.replace('Bearer ', '')
-        const userToken = await this._userTokenService.find({token : token, tokenType : TokenType.SignIn, isActive : true})
 
-        if(!userToken) {
-            return new Response(false, statusCodes.UNAUTHORIZED, {key : 'user', value : 'user can not sign out'})
-        }
-
-        await this._userTokenService.deActivateToken(userToken)
-
-        return new Response(true, statusCodes.OK, {key : 'id', value : userToken.applicationUser})
+        try {
+            token = token.replace('Bearer ', '')
+            const userToken = await this._userTokenService.find({token : token, tokenType : TokenType.SignIn, isActive : true})
+    
+            if(!userToken) {
+                return new Response(false, statusCodes.UNAUTHORIZED, {key : 'user', value : 'user can not sign out'})
+            }
+    
+            await this._userTokenService.deActivateToken(userToken)
+    
+            return new Response(true, statusCodes.OK, {key : 'id', value : userToken.applicationUser})
+        } catch (error) {
+            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+        }        
     }
 
     async confirmAccount(token : string) : Promise<Response> {
 
-        const userToken = await this._userTokenService.find({token : token, tokenType : TokenType.ConfirmAccount, isActive : true})
+        try {
+            const userToken = await this._userTokenService.find({token : token, tokenType : TokenType.ConfirmAccount, isActive : true})
 
         if(!userToken) {
             return new Response(false, statusCodes.NOT_FOUND, {key : 'token' , value : 'token is not found'})
@@ -205,6 +219,9 @@ export class UserService implements IUserService {
 
         await this._userTokenService.deActivateToken(userToken)        
         return new Response(false, statusCodes.BAD_REQUEST, {key : 'token' , value : 'token is expired'})
+        } catch (error) {
+            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+        }         
     }
 
 

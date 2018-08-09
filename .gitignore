@@ -62,3 +62,6 @@ typings/
 
 #dist project output
 dist
+
+#vscode config
+.vscode

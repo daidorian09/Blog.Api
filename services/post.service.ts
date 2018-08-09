@@ -25,7 +25,8 @@ export class PostService implements IPostService {
 
     async upsert(post : PostModel, token : string) : Promise<Response> {
 
-        const userToken = await this._userTokenService.validateUserAuthenticationToken(post.author, token, TokenType.SignIn)
+        try {
+            const userToken = await this._userTokenService.validateUserAuthenticationToken(post.author, token, TokenType.SignIn)
 
         if(!userToken) {
             return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
@@ -50,11 +51,16 @@ export class PostService implements IPostService {
         const newPost = await this._genericRepository.create(post)
 
         return new Response(true, statusCodes.CREATED, {key : 'post', value : newPost._id})
+        } catch (error) {
+            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+        }
+        
     }
 
     async getPosts(follower : string, token : string) : Promise<Response> {
 
-        const userToken = await this._userTokenService.validateUserAuthenticationToken(follower, token, TokenType.SignIn)
+        try {
+            const userToken = await this._userTokenService.validateUserAuthenticationToken(follower, token, TokenType.SignIn)
 
         if(!userToken) {
             return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
@@ -85,11 +91,17 @@ export class PostService implements IPostService {
         }
 
         return new Response(true, statusCodes.OK, {key : "posts", value: followedsPosts })
+        } catch (error) {
+            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+        }
+
+        
     }
 
     async getPost(postId : string, userId : string, token : string) : Promise<Response> {
 
-        const userToken = await this._userTokenService.validateUserAuthenticationToken(userId, token, TokenType.SignIn)
+        try {
+            const userToken = await this._userTokenService.validateUserAuthenticationToken(userId, token, TokenType.SignIn)
 
         if(!userToken) {
             return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
@@ -118,10 +130,15 @@ export class PostService implements IPostService {
         }
         
         return new Response(true, statusCodes.OK, {key : 'post', value : post})
+        } catch (error) {
+            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+        }
+        
     }
 
     async search(predicate?: any): Promise<Response> {
-        const userToken = await this._userTokenService.validateUserAuthenticationToken(predicate.userId, predicate.token, TokenType.SignIn)
+        try {
+            const userToken = await this._userTokenService.validateUserAuthenticationToken(predicate.userId, predicate.token, TokenType.SignIn)
 
         if(!userToken) {
             return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
@@ -145,6 +162,9 @@ export class PostService implements IPostService {
         }
 
         return new Response(true, statusCodes.OK, {key : 'search', value : searchResult})
+        } catch (error) {
+            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+        }        
     }
 
     private async increaseClickCount(model : PostModel) : Promise<void> {

@@ -12,6 +12,12 @@ gulp.task("lint", function() {
         }));
 })
 
+gulp.task('html', function() {
+    return gulp
+        .src('./**/*.html')
+        .pipe(gulp.dest('dist'));
+});
+
 gulp.task('clean', function() {
     return gulp.src('dist/*', {
             read: false

@@ -6,14 +6,19 @@ import { GenericRepository } from '../repository/generic.repository'
 import User, { IUser as UserModel } from '../models/User'
 import { Response } from '../dto/response.dto'
 import statusCodes from '../const/statusCodes.constant'
-import validationConfig from '../const/validationConfig.constat'
+import validationConfig from '../const/validationConfig.constant'
 import { IUserToken as UserToken, TokenType } from '../models/UserToken'
 
 
 import { calculateExpireDate } from '../lib/expireDateCalculator'
-import { subtractDate } from '../lib/dateSubtractor';
+import { subtractDate } from '../lib/dateSubtractor'
 import jwtStrategy from '../lib/jwtStrategy'
 import { Singleton } from 'typescript-ioc'
+
+import { validateSignUpFields } from '../lib/validation/signUp.validation'
+import { validateSignInFields } from '../lib/validation/signIn.validation'
+import { mapErrorObject } from '../lib/errorObjectDictionaryMapper'
+import { ConcreteNotificationFactory } from './concreteNotificationFactory.service'
 
 require('dotenv').config()
 
@@ -29,35 +34,17 @@ export class UserService implements IUserService {
     } 
     async createUser(entity: UserModel): Promise<Response> {
 
+        const { error } = validateSignUpFields(entity)
+
+        if(error) {
+            const {key, value } = mapErrorObject(error.details)
+            return new Response(false, statusCodes.UNPROCESSABLE_ENTITY, { key : key, value : value})
+        }
+
         const user = await this.find({email : entity.email})
         if (user) {
 
-            const oldUserToken = await this._userTokenService.find({
-                applicationUser: user._id,
-                isActive: true,
-                tokenType: TokenType.ConfirmAccount
-            })
-
-            if (oldUserToken && !user.isActive) {
-
-                const isTokenValid = subtractDate(<Date>oldUserToken.expiredAt)
-
-                if (isTokenValid) {
-                    return new Response(false, statusCodes.CONFLICT, {
-                        key: 'user',
-                        value: `${user.email} has already registered`
-                    })
-                }
-                await this._userTokenService.deActivateToken(oldUserToken)
-                await this.saveTokenForUser(user._id, TokenType.ConfirmAccount)
-
-                return new Response(true, statusCodes.CREATED, {key : 'user', value : user._id})
-
-            }
-            return new Response(false, statusCodes.CONFLICT, {
-                key: 'user',
-                value: `${user.email} has already registered`
-            })
+            return await this.reSignUpCreatedUser(user)
         }
 
         entity.salt = await this._passwordService.generateSalt()
@@ -65,9 +52,44 @@ export class UserService implements IUserService {
 
         const newUser = await this._genericRepository.create(entity)
 
-        await this.saveTokenForUser(newUser._id, TokenType.ConfirmAccount)
+        const token =  await this.saveTokenForUser(newUser._id, TokenType.ConfirmAccount)
+
+        await this.sendNotification(token, newUser.email)
 
         return new Response(true, statusCodes.CREATED, {key : 'user', value : newUser._id})
+    }
+
+    private async reSignUpCreatedUser(createdUser : UserModel) : Promise<Response> {
+
+        const oldUserToken = await this._userTokenService.find({
+            applicationUser: createdUser._id,
+            isActive: true,
+            tokenType: TokenType.ConfirmAccount
+        })
+
+        if (oldUserToken && !createdUser.isActive) {
+
+            const isTokenValid = subtractDate(<Date>oldUserToken.expiredAt)
+
+            if (isTokenValid) {
+                return new Response(false, statusCodes.CONFLICT, {
+                    key: 'user',
+                    value: `${createdUser.email} has already registered`
+                })
+            }
+
+            await this._userTokenService.deActivateToken(oldUserToken)
+            const token = await this.saveTokenForUser(createdUser._id, TokenType.ConfirmAccount)
+
+            await this.sendNotification(token, createdUser.email)
+
+            return new Response(true, statusCodes.CREATED, {key: 'user', value: createdUser._id})
+
+        }
+        return new Response(false, statusCodes.CONFLICT, {
+            key: 'user',
+            value: `${createdUser.email} has already registered`
+        })
     }
     
     private async saveTokenForUser(userId : string, tokenType : TokenType) : Promise<string> {
@@ -78,6 +100,13 @@ export class UserService implements IUserService {
         await this.saveUserToken(userId, token, expiredAt, tokenType)
 
         return token
+    }
+
+    private async sendNotification(token : string, receiver : string) : Promise<void> {
+        const abstractFactory = new ConcreteNotificationFactory()
+
+        const emailService = abstractFactory.createEmailService()
+        await emailService.sendEmail(token, receiver)
     }
 
     private getExpireDate(tokenType : TokenType) : Date {
@@ -92,6 +121,13 @@ export class UserService implements IUserService {
     }
 
     async signIn(email: string, password: string): Promise<Response> {
+
+        const { error } = validateSignInFields(email, password)
+
+        if(error) {
+            const {key, value } = mapErrorObject(error.details)
+            return new Response(false, statusCodes.UNPROCESSABLE_ENTITY, { key : key, value : value})
+        }
        
         const user = await this.find({email : email})
 
@@ -103,7 +139,7 @@ export class UserService implements IUserService {
             return new Response(false, statusCodes.BAD_REQUEST, {key : 'activation', value : 'User did not active its account'})
         }
 
-        if(user.accessFailedCount == validationConfig.MaximumNumberOfAccessCount) {
+        if(user.accessFailedCount == validationConfig.MAXIMUM_NUMBER_OF_ACCESS_COUNT) {
             return new Response(false, statusCodes.BAD_REQUEST, {key : 'account', value : `${email}'s account has been suspended for invalid activities`})
         }
 

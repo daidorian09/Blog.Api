@@ -53,7 +53,7 @@ export class AuthenticationApi {
     this.router.post('/sign-out', passport.authenticate('jwt', {
       session: false
     }), this.signOut.bind(this))
-    this.router.post('/confirm-account/:token', this.confirmAccount.bind(this))
+    this.router.get('/confirm-account/:token', this.confirmAccount.bind(this))
   }
 }
 

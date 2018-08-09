@@ -16,16 +16,16 @@ export class PostApi {
   public async post(req: Request, res:Response): Promise<void> {
     const post : Post = <Post>req.body
     post.author = <string>req.user._id
-
-    const result = await this._postService.upsert(post)
+    const token = <string>req.headers.authorization
+    const result = await this._postService.upsert(post, token)
 
     res.status(result.statusCode).json(result)
   }
 
   public async getPosts(req: Request, res:Response): Promise<void> {
     const follower = <string>req.user._id
-
-    const result = await this._postService.getPosts(follower)
+    const token = <string>req.headers.authorization
+    const result = await this._postService.getPosts(follower, token)
 
     res.status(result.statusCode).json(result)
   }
@@ -33,8 +33,9 @@ export class PostApi {
   public async getPost(req: Request, res:Response) : Promise<void> {
     const postId = <string>req.params.postId
     const follower =  <string>req.user._id
+    const token = <string>req.headers.authorization
 
-    const result = await this._postService.getPost(postId, follower)
+    const result = await this._postService.getPost(postId, follower, token)
 
     res.status(result.statusCode).json(result)
   }
@@ -42,10 +43,12 @@ export class PostApi {
   public async search(req: Request, res : Response) : Promise<void> {
     const query = req.params.q
     const userId =  <string>req.user._id
+    const token = <string>req.headers.authorization
 
     const data  = {
       q : query,
-      userId : userId
+      userId : userId,
+      token : token
     }
 
     const result = await this._postService.search(data)

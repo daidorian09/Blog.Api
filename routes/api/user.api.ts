@@ -17,8 +17,9 @@ export class UserApi {
       
       const userToUser: UserToUser = <UserToUser> req.body
       userToUser.follower = req.user._id
+      const token = <string>req.headers.authorization
 
-      const result = await this._userToUserService.follow(userToUser)
+      const result = await this._userToUserService.follow(userToUser, token)
 
       res.status(result.statusCode).json(result)
   }
@@ -27,8 +28,9 @@ export class UserApi {
 
       const userToUser: UserToUser = <UserToUser>req.body
       userToUser.follower = req.user._id
+      const token = <string>req.headers.authorization
 
-      const result = await this._userToUserService.unfollow(userToUser)
+      const result = await this._userToUserService.unfollow(userToUser, token)
 
       res.status(result.statusCode).json(result)
   }

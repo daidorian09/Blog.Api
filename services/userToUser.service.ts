@@ -3,9 +3,11 @@ import  UserToUser, { IUserToUser as userToUserModel } from '../models/UserToUse
 import { GenericRepository } from '../repository/generic.repository'
 
 import { Response } from '../dto/response.dto'
-import statusCodes from '../const/statusCodes.constant';
-import { UserService } from './user.service';
+import statusCodes from '../const/statusCodes.constant'
+import { UserService } from './user.service'
 import { Singleton } from 'typescript-ioc'
+import { UserTokenService } from './userToken.service'
+import { TokenType } from '../models/UserToken'
 
 @Singleton
 export class UserToUserService implements IUserToUserService {
@@ -13,13 +15,21 @@ export class UserToUserService implements IUserToUserService {
     private readonly _userService : UserService = new UserService()
     private readonly _genericRepository : GenericRepository<userToUserModel> = new GenericRepository(UserToUser)
 
+    private readonly _userToken : UserTokenService = new UserTokenService()
+
     async find(predicate?: object | undefined): Promise<userToUserModel[]> {
 
         return await this._genericRepository.find(predicate)
     }     
     
-    async follow(userToUser: userToUserModel): Promise<Response> {
+    async follow(userToUser: userToUserModel, token : string): Promise<Response> {
 
+        const userToken = await this._userToken.validateUserAuthenticationToken(userToUser.follower, token, TokenType.SignIn)
+
+        if(!userToken) {
+            return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
+        }
+        
         const candidateFollowedUserValidationResponse = await this.validateCandidateFollowedUser(userToUser.followed)
 
         if(candidateFollowedUserValidationResponse) {
@@ -40,7 +50,14 @@ export class UserToUserService implements IUserToUserService {
 
         return new Response(true, statusCodes.CREATED, {key : 'id', value : newUserToUser._id})
     }
-    async unfollow(userToUser: userToUserModel): Promise<Response> {
+    async unfollow(userToUser: userToUserModel, token : string): Promise<Response> {
+
+        const userToken = await this._userToken.validateUserAuthenticationToken(userToUser.follower, token, TokenType.SignIn)
+
+        if(!userToken) {
+            return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
+        }
+
 
         const candidateFollowedUserValidationResponse = await this.validateCandidateFollowedUser(userToUser.followed)
 
@@ -66,7 +83,7 @@ export class UserToUserService implements IUserToUserService {
         return new Response(true, statusCodes.OK, {key : 'id', value: followedUser._id})
     }   
 
-    private async findFollowedUser(userToUser: userToUserModel) {
+    private async findFollowedUser(userToUser: userToUserModel) : Promise<userToUserModel> {
         const followedUser = await this.find({
             follower: userToUser.follower,
             followed: userToUser.followed,

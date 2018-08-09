@@ -12,6 +12,8 @@ export interface IPost extends mongoose.Document {
 
     tags : Array<string>
 
+    clickCount : number
+
     isActive : boolean
 
     createdAt : Date
@@ -33,14 +35,20 @@ const PostSchema: mongoose.Schema = new mongoose.Schema({
         ref: 'users'
     },
     isPrivate: {
-        type: Boolean
+        type: Boolean,
+        default : false
     },
     tags: {
-        type : Array
+        type : Array,
+        default : null
     },
     isActive: {
         type: Boolean,
         default: true
+    },
+    clickCount : {
+        type : Number,
+        default : 0
     },
     createdAt: {
         type: Date,
@@ -53,8 +61,7 @@ const PostSchema: mongoose.Schema = new mongoose.Schema({
 })
 
 
-const Post = mongoose.model<IPost>('posts', PostSchema)
-PostSchema.index({header: 'text', tags: 'text'}, {default_language: 'english'});
+const Post = mongoose.model<IPost>('posts', PostSchema, 'posts')
 
 Object.seal(Post)
 export default Post

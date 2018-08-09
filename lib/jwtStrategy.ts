@@ -1,5 +1,4 @@
-import {  Strategy,  ExtractJwt } from "passport-jwt"
-import jwt, {  Secret } from 'jsonwebtoken'
+import {  Strategy,  ExtractJwt } from 'passport-jwt'
 import passport from "passport"
 
 import User from '../models/User'
@@ -52,11 +51,9 @@ class JwtStrategy {
         return new Strategy(params, (req: any, payload: any, done: any) => {
             User.findById(
                 payload.id, (err, user) => {
-                    /* istanbul ignore next: passport response */
                     if (err) {
                         return done(err);
                     }
-                    /* istanbul ignore next: passport response */
                     if (!user) {
                         return done(null, false, {
                             message: "The user in the token was not found"

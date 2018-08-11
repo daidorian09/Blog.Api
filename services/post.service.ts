@@ -93,9 +93,7 @@ export class PostService implements IPostService {
         return new Response(true, statusCodes.OK, {key : "posts", value: followedsPosts })
         } catch (error) {
             return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
-        }
-
-        
+        }        
     }
 
     async getPost(postId : string, userId : string, token : string) : Promise<Response> {
@@ -103,37 +101,37 @@ export class PostService implements IPostService {
         try {
             const userToken = await this._userTokenService.validateUserAuthenticationToken(userId, token, TokenType.SignIn)
 
-        if(!userToken) {
-            return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
-        }
+            if(!userToken) {
+                return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
+            }
 
-        const post = await this.find({_id : postId, isActive : true})
+            const post = await this.find({_id : postId, isActive : true})
 
-        if(!post) {
-            return new Response(false, statusCodes.NOT_FOUND, {key : 'post', value : 'post is not found'})
-        }
-        
-        await this.increaseClickCount(post)
-        
-        if(post.author.toString() === userId.toString()) {
+            if(!post) {
+                return new Response(false, statusCodes.NOT_FOUND, {key : 'post', value : 'post is not found'})
+            }
+            
+            await this.increaseClickCount(post)
+            
+            if(post.author.toString() === userId.toString()) {
+                return new Response(true, statusCodes.OK, {key : 'post', value : post})
+            }
+
+            const userToUser = await this._userToUserService.find({followed : post.author, follower : userId  ,isActive : true})
+
+            if(!userToUser[0]) {
+                return new Response(false, statusCodes.NOT_FOUND, {key : 'post', value : 'post is not found'})
+            }        
+
+            if(userToUser[0].followed.toString() === post.author.toString() && post.isPrivate) {
+                return new Response(false, statusCodes.UNAUTHORIZED, {key : 'post', value: 'post status is private'})
+            }
+            
             return new Response(true, statusCodes.OK, {key : 'post', value : post})
-        }
-
-        const userToUser = await this._userToUserService.find({followed : post.author, follower : userId  ,isActive : true})
-
-        if(!userToUser[0]) {
-            return new Response(false, statusCodes.NOT_FOUND, {key : 'post', value : 'post is not found'})
-        }        
-
-        if(userToUser[0].followed.toString() === post.author.toString() && post.isPrivate) {
-            return new Response(false, statusCodes.UNAUTHORIZED, {key : 'post', value: 'post status is private'})
-        }
-        
-        return new Response(true, statusCodes.OK, {key : 'post', value : post})
-        } catch (error) {
-            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
-        }
-        
+            } catch (error) {
+                return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+            }
+            
     }
 
     async search(predicate?: any): Promise<Response> {
@@ -165,6 +163,23 @@ export class PostService implements IPostService {
         } catch (error) {
             return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
         }        
+    }
+
+    async getMyPosts(author: string, token: string): Promise<Response> {
+        try {
+            const userToken = await this._userTokenService.validateUserAuthenticationToken(author, token, TokenType.SignIn)
+
+            if(!userToken) {
+                return new Response(false, statusCodes.UNAUTHORIZED, {key:'user', value : 'access denied'})
+            }
+
+            const myPosts = await this._genericRepository.find({ author : author })
+            
+            return new Response(true, statusCodes.OK, {key : 'post' , value : myPosts})
+
+        } catch (error) {
+            return new Response(false, statusCodes.SERVER, {key : 'server', value : error.message})
+        }
     }
 
     private async increaseClickCount(model : PostModel) : Promise<void> {

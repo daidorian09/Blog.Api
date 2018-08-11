@@ -55,6 +55,16 @@ export class PostApi {
 
     res.status(result.statusCode).json(result)
   }
+
+  public async getMyPosts(req : Request, res : Response) : Promise<void> {
+    const author =  <string>req.user._id
+    const token = <string>req.headers.authorization
+
+    const result = await this._postService.getMyPosts(author, token)
+
+    res.status(result.statusCode).json(result)
+  }
+
   public routes() {
     this.router.post('/post', passport.authenticate('jwt', {
       session: false
@@ -68,6 +78,9 @@ export class PostApi {
     this.router.get('/search/:q', passport.authenticate('jwt', {
       session: false
     }), this.search.bind(this))
+    this.router.get('/getMy-posts', passport.authenticate('jwt', {
+      session: false
+    }), this.getPost.bind(this))
   }
 }
 

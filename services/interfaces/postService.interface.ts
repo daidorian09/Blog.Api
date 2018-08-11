@@ -11,5 +11,6 @@ export interface IPostService {
 
     search(predicate? : Object) : Promise<Response>
 
+    getMyPosts(author : string, token : string) : Promise<Response>
 
 }
